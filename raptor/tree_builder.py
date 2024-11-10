@@ -258,6 +258,7 @@ class TreeBuilder:
         return leaf_nodes
 
     def build_from_text(self, text: str, use_multithreading: bool = True) -> Tree:
+
         """Builds a golden tree from the input text, optionally using multithreading.
 
         Args:
@@ -296,6 +297,7 @@ class TreeBuilder:
 
     @abstractclassmethod
     def construct_tree(
+       
         self,
         current_level_nodes: Dict[int, Node],
         all_tree_nodes: Dict[int, Node],
@@ -314,56 +316,55 @@ class TreeBuilder:
         Returns:
             Dict[int, Node]: The final set of root nodes.
         """
-        pass
 
-        # logging.info("Using Transformer-like TreeBuilder")
+        logging.info("Using Transformer-like TreeBuilder")
 
-        # def process_node(idx, current_level_nodes, new_level_nodes, all_tree_nodes, next_node_index, lock):
-        #     relevant_nodes_chunk = self.get_relevant_nodes(
-        #         current_level_nodes[idx], current_level_nodes
-        #     )
+        def process_node(idx, current_level_nodes, new_level_nodes, all_tree_nodes, next_node_index, lock):
+            relevant_nodes_chunk = self.get_relevant_nodes(
+                current_level_nodes[idx], current_level_nodes
+            )
 
-        #     node_texts = get_text(relevant_nodes_chunk)
+            node_texts = get_text(relevant_nodes_chunk)
 
-        #     summarized_text = self.summarize(
-        #         context=node_texts,
-        #         max_tokens=self.summarization_length,
-        #     )
+            summarized_text = self.summarize(
+                context=node_texts,
+                max_tokens=self.summarization_length,
+            )
 
-        #     logging.info(
-        #         f"Node Texts Length: {len(self.tokenizer.encode(node_texts))}, Summarized Text Length: {len(self.tokenizer.encode(summarized_text))}"
-        #     )
+            logging.info(
+                f"Node Texts Length: {len(self.tokenizer.encode(node_texts))}, Summarized Text Length: {len(self.tokenizer.encode(summarized_text))}"
+            )
 
-        #     next_node_index, new_parent_node = self.create_node(
-        #         next_node_index,
-        #         summarized_text,
-        #         {node.index for node in relevant_nodes_chunk}
-        #     )
+            next_node_index, new_parent_node = self.create_node(
+                next_node_index,
+                summarized_text,
+                {node.index for node in relevant_nodes_chunk}
+            )
 
-        #     with lock:
-        #         new_level_nodes[next_node_index] = new_parent_node
+            with lock:
+                new_level_nodes[next_node_index] = new_parent_node
 
-        # for layer in range(self.num_layers):
-        #     logging.info(f"Constructing Layer {layer}: ")
+        for layer in range(self.num_layers):
+            logging.info(f"Constructing Layer {layer}: ")
 
-        #     node_list_current_layer = get_node_list(current_level_nodes)
-        #     next_node_index = len(all_tree_nodes)
+            node_list_current_layer = get_node_list(current_level_nodes)
+            next_node_index = len(all_tree_nodes)
 
-        #     new_level_nodes = {}
-        #     lock = Lock()
+            new_level_nodes = {}
+            lock = Lock()
 
-        #     if use_multithreading:
-        #         with ThreadPoolExecutor() as executor:
-        #             for idx in range(0, len(node_list_current_layer)):
-        #                 executor.submit(process_node, idx, node_list_current_layer, new_level_nodes, all_tree_nodes, next_node_index, lock)
-        #                 next_node_index += 1
-        #             executor.shutdown(wait=True)
-        #     else:
-        #         for idx in range(0, len(node_list_current_layer)):
-        #             process_node(idx, node_list_current_layer, new_level_nodes, all_tree_nodes, next_node_index, lock)
+            if use_multithreading:
+                with ThreadPoolExecutor() as executor:
+                    for idx in range(0, len(node_list_current_layer)):
+                        executor.submit(process_node, idx, node_list_current_layer, new_level_nodes, all_tree_nodes, next_node_index, lock)
+                        next_node_index += 1
+                    executor.shutdown(wait=True)
+            else:
+                for idx in range(0, len(node_list_current_layer)):
+                    process_node(idx, node_list_current_layer, new_level_nodes, all_tree_nodes, next_node_index, lock)
 
-        #     layer_to_nodes[layer + 1] = list(new_level_nodes.values())
-        #     current_level_nodes = new_level_nodes
-        #     all_tree_nodes.update(new_level_nodes)
+            layer_to_nodes[layer + 1] = list(new_level_nodes.values())
+            current_level_nodes = new_level_nodes
+            all_tree_nodes.update(new_level_nodes)
 
-        # return new_level_nodes
+         return new_level_nodes
