@@ -183,3 +183,9 @@ class UnifiedQAModel(BaseQAModel):
         input_string = question + " \\n " + context
         output = self.run_model(input_string)
         return output[0]
+
+class HuggingFaceQAModel(BaseQAModel):
+    def __init__(self, model_name="deepset/roberta-base-squad2"):
+        self.model = AutoModelForQuestionAnswering.from_pretrained(model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+

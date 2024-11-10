@@ -19,7 +19,7 @@ RA = RetrievalAugmentation()
 # Đọc nội dung từ file sample.txt
 try:
     # Mở và đọc file sample.txt
-    with open('sample.txt', 'r') as file:
+    with open('demo/sample.txt', 'r') as file:
         text = file.read()
     # Thêm nội dung văn bản vào cây truy vấn
     RA.add_documents(text)
