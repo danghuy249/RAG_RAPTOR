@@ -367,4 +367,4 @@ class TreeBuilder:
             current_level_nodes = new_level_nodes
             all_tree_nodes.update(new_level_nodes)
 
-         return new_level_nodes
+     return new_level_nodes
