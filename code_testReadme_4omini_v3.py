@@ -3,7 +3,7 @@ import os
 # Import thư viện dotenv để đọc biến môi trường từ file .env
 from dotenv import load_dotenv
 # Import class RetrievalAugmentation từ module raptor
-from raptor import RetrievalAugmentation
+from raptor import RetrievalAugmentation, RetrievalAugmentationConfig
 
 # Tải các biến môi trường từ file .env
 load_dotenv()
@@ -12,8 +12,25 @@ load_dotenv()
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
 # Bước 1: Thiết lập môi trường và cấu hình RAPTOR
-# Khởi tạo đối tượng RetrievalAugmentation với cấu hình mặc định
-RA = RetrievalAugmentation()
+# Tạo config với các tham số tùy chỉnh
+config = RetrievalAugmentationConfig(
+    # Cấu hình cho TreeBuilder
+    tb_num_layers=3,              # Số layer trong cây (mặc định là 5)
+    tb_top_k=3,                   # Số nodes được chọn trong mỗi layer
+    tb_max_tokens=100,            # Số token tối đa cho mỗi node
+    
+    # Cấu hình cho TreeRetriever
+    tr_top_k=5,                   # Số nodes được retrieve trong mỗi query
+    tr_num_layers=2,              # Số layer được dùng để retrieve
+    
+    # Cấu hình cho ClusterTreeBuilder
+    tree_builder_type="cluster",  # Loại tree builder
+    tb_cluster_embedding_model="OpenAI",  # Model embedding cho clustering
+    reduction_dimension=3,        # Số nodes tối đa trong mỗi cluster
+)
+
+# Khởi tạo RetrievalAugmentation với config
+RA = RetrievalAugmentation(config=config)
 
 # Bước 2: Thêm tài liệu vào cây truy vấn để index
 # Đọc nội dung từ file sample.txt
@@ -49,6 +66,12 @@ RA = RetrievalAugmentation(tree=SAVE_PATH)
 answer = RA.answer_question(question=question)
 # In kết quả sau khi tải lại cây truy vấn
 print("Answer after loading tree: ", answer)
+
+# Kiểm tra cây đã được tạo chưa
+tree_path = os.path.join(SAVE_PATH, "tree.pkl")
+print(f"\nKiểm tra cây:")
+print(f"- Đường dẫn đầy đủ: {os.path.abspath(SAVE_PATH)}")
+print(f"- File tree.pkl tồn tại: {os.path.exists(tree_path)}")
 
 # Lưu ý:
 # Hãy đảm bảo bạn đã cài đặt tất cả phụ thuộc trước khi chạy file này:

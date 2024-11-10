@@ -1,5 +1,366 @@
 {
-  "panelChats": [],
+  "panelChats": [
+    {
+      "ai_editor": "cursor",
+      "customTitle": "Vấn đề không tạo được file tree_analysis.txt",
+      "id": "fddc2870-9adc-4a8f-9a1f-d47929f11125",
+      "parent_id": null,
+      "created_on": "2024-11-10T07:27:34.922Z",
+      "messages": [
+        {
+          "id": "e996b961-fa8f-4cd4-ba33-dce17734d09a",
+          "messageText": "Sao chạy code xong ko thấy tree_analysis.txt trả ra ??\n@demo",
+          "responseText": "Có một vài lý do có thể khiến file `tree_analysis.txt` không được tạo ra:\n\n1. **Kiểm tra đường dẫn SAVE_PATH**:\n- Code đang tìm file `tree.pkl` trong thư mục \"demo/cinderella\"\n- Bạn cần đảm bảo:\n  - Thư mục \"demo/cinderella\" tồn tại\n  - File \"tree.pkl\" đã có sẵn trong thư mục đó\n\n2. **Kiểm tra lỗi trong terminal**:\n- Code có xử lý exception ở dòng 82-83\n- Nếu có lỗi, nó sẽ in ra thông báo \"Error: ...\"\n- Bạn hãy kiểm tra xem có thông báo lỗi nào không\n\n3. **Sửa đường dẫn**:\nBạn có thể thử sửa đường dẫn tương đối thành đường dẫn tuyệt đối:\n\n```python\nSAVE_PATH = \"/đường_dẫn_đầy_đủ/demo/cinderella\"\nOUTPUT_FILE = \"/đường_dẫn_đầy_đủ/demo/tree_analysis.txt\"\n```\n\n4. **Kiểm tra quyền ghi file**:\n- Đảm bảo Python có quyền tạo và ghi file trong thư mục \"demo\"\n\nĐể debug, bạn có thể thêm dòng print sau dòng 14:\n\n```python\nprint(f\"Looking for tree.pkl at: {pkl_path}\")\nprint(f\"File exists: {os.path.exists(pkl_path)}\")\n```\n\nVui lòng kiểm tra các điểm trên và cho tôi biết kết quả để tôi có thể giúp bạn tốt hơn.",
+          "model": "claude-3-5-sonnet-20241022",
+          "timestamp": "2024-11-10T07:27:34.922Z",
+          "context": [
+            {
+              "context_type": "selection",
+              "key": "b7912256-e538-40fc-bff4-ec023d05839d",
+              "value": {
+                "human_readable": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_reportRA.py",
+                "uri": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_reportRA.py",
+                "range": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 83,
+                  "endColumn": 34
+                },
+                "text": "import pickle\r\nfrom datetime import datetime\r\nimport os\r\nimport graphviz\r\n\r\ndef save_detailed_tree_info(save_path, output_file):\r\n    \"\"\"\r\n    Load tree and save both text report and visualization\r\n    \"\"\"\r\n    # Check and create directories\r\n    os.makedirs(os.path.dirname(output_file), exist_ok=True)\r\n    \r\n    # Load tree\r\n    pkl_path = os.path.join(save_path, \"tree.pkl\")\r\n    if not os.path.exists(pkl_path):\r\n        raise FileNotFoundError(f\"Tree file not found at {pkl_path}\")\r\n        \r\n    with open(pkl_path, 'rb') as f:\r\n        tree = pickle.load(f)\r\n    \r\n    # Save text report\r\n    with open(output_file, 'w', encoding='utf-8') as f:\r\n        # Write header with metadata\r\n        f.write(f\"Tree Analysis Report\\n\")\r\n        f.write(f\"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\\n\")\r\n        f.write(f\"Total Layers: {tree.num_layers}\\n\")\r\n        f.write(f\"Total Nodes: {len(tree.all_nodes)}\\n\")\r\n        f.write(\"=\" * 80 + \"\\n\\n\")\r\n\r\n        # Write detailed layer information\r\n        for layer in range(tree.num_layers):\r\n            f.write(f\"\\nLAYER {layer}\\n\")\r\n            f.write(\"-\" * 80 + \"\\n\")\r\n            \r\n            layer_nodes = tree.layer_to_nodes.get(layer, [])\r\n            f.write(f\"Number of nodes in layer: {len(layer_nodes)}\\n\\n\")\r\n            \r\n            for node in layer_nodes:\r\n                f.write(f\"Node ID: {node.index}\\n\")\r\n                f.write(f\"Text: {node.text}\\n\")\r\n                f.write(f\"Children nodes: {sorted(list(node.children))}\\n\")\r\n                f.write(\"-\" * 40 + \"\\n\\n\")\r\n\r\n        # Write root nodes information\r\n        f.write(\"\\nROOT NODES\\n\")\r\n        f.write(\"-\" * 80 + \"\\n\")\r\n        for node in tree.root_nodes.values():\r\n            f.write(f\"Root Node ID: {node.index}\\n\")\r\n            f.write(f\"Text: {node.text}\\n\\n\")\r\n\r\n    # Create tree visualization\r\n    dot = graphviz.Digraph(comment='Tree Structure')\r\n    \r\n    # Add nodes\r\n    for layer in range(tree.num_layers):\r\n        with dot.subgraph(name=f'cluster_{layer}') as c:\r\n            c.attr(label=f'Layer {layer}')\r\n            for node in tree.layer_to_nodes.get(layer, []):\r\n                # Truncate text for display\r\n                short_text = node.text[:30] + '...' if len(node.text) > 30 else node.text\r\n                c.node(str(node.index), f'Node {node.index}\\n{short_text}')\r\n                \r\n                # Add edges to children\r\n                for child in node.children:\r\n                    dot.edge(str(node.index), str(child))\r\n    \r\n    # Save visualization\r\n    viz_path = os.path.join(os.path.dirname(output_file), 'tree_viz')\r\n    dot.render(viz_path, format='png', cleanup=True)\r\n    \r\n    return tree.num_layers, len(tree.all_nodes)\r\n\r\nif __name__ == \"__main__\":\r\n    SAVE_PATH = \"demo/cinderella\"\r\n    OUTPUT_FILE = \"demo/tree_analysis.txt\"\r\n    \r\n    try:\r\n        num_layers, total_nodes = save_detailed_tree_info(SAVE_PATH, OUTPUT_FILE)\r\n        print(f\"Tree analysis saved to {OUTPUT_FILE}\")\r\n        print(f\"Tree visualization saved as demo/tree_viz.png\")\r\n        print(f\"Tree has {num_layers} layers and {total_nodes} total nodes\")\r\n    except Exception as e:\r\n        print(f\"Error: {str(e)}\")"
+              }
+            },
+            {
+              "context_type": "file",
+              "key": "605fe392-eb5a-4a4e-a21a-24a91c4893df",
+              "value": {
+                "human_readable": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_reportRA.py",
+                "uri": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_reportRA.py",
+                "isCurrentFile": true
+              }
+            },
+            {
+              "context_type": "folder",
+              "key": "9b3a568f-ba4f-4d43-a9ae-441f3437644a",
+              "value": {
+                "human_readable": "/demo",
+                "relativePath": "/demo"
+              }
+            }
+          ],
+          "kv_store": {}
+        },
+        {
+          "id": "e4443f8f-fdd3-46d3-af7b-3bd679068c42",
+          "messageText": "demo/cinderella\n\nCinderella là 1 file mà nhỉ, đâu phải thư mục\n\nXem code code_textReadme",
+          "responseText": "Dựa vào code của bạn, tôi thấy vấn đề ở đây:\n\n\n```41:43:code_testReadme_4omini.py\nSAVE_PATH = \"demo/cinderella\"\r\n# Lưu cây truy vấn vào đường dẫn đã chỉ định\r\nRA.save(SAVE_PATH)\r\n```\n\n\n`SAVE_PATH = \"demo/cinderella\"` đang được sử dụng như một đường dẫn để lưu cây truy vấn. Khi `RA.save(SAVE_PATH)` được gọi, nó sẽ tự động tạo:\n1. Thư mục \"demo\" (nếu chưa tồn tại)\n2. Thư mục \"cinderella\" bên trong thư mục \"demo\"\n3. File \"tree.pkl\" bên trong thư mục \"cinderella\"\n\nVì vậy, \"cinderella\" không phải là một file mà là một thư mục chứa file \"tree.pkl\".\n\nĐể kiểm tra, bạn có thể:\n1. Xem trong thư mục \"demo/cinderella\" có file \"tree.pkl\" không\n2. Hoặc sửa code để in ra đường dẫn đầy đủ:\n\n```python\nimport os\n\nSAVE_PATH = \"demo/cinderella\"\nprint(f\"Đường dẫn đầy đủ: {os.path.abspath(SAVE_PATH)}\")\nprint(f\"File tree.pkl tồn tại: {os.path.exists(os.path.join(SAVE_PATH, 'tree.pkl'))}\")\n```\n\nKhi chạy `code_reportRA.py`, nó cần tìm file \"tree.pkl\" trong thư mục \"demo/cinderella\" để tạo báo cáo. Nếu file này không tồn tại, bạn cần chạy `code_testReadme_4omini.py` trước để tạo cây truy vấn.",
+          "model": "claude-3-5-sonnet-20241022",
+          "timestamp": "2024-11-10T07:27:34.922Z",
+          "context": [
+            {
+              "context_type": "file",
+              "key": "9ac5c1be-7186-49e8-93d9-8a0726fcad52",
+              "value": {
+                "human_readable": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_testReadme_4omini.py",
+                "uri": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_testReadme_4omini.py",
+                "isCurrentFile": true
+              }
+            }
+          ],
+          "kv_store": {
+            "file_paths": [
+              "code_reportRA.py",
+              "code_testReadme_4omini_v2.py"
+            ],
+            "file_path_dict": {
+              "0": "code_testReadme_4omini_v2.py"
+            }
+          }
+        }
+      ],
+      "kv_store": {}
+    },
+    {
+      "ai_editor": "cursor",
+      "customTitle": "Đơn giản hóa tạo ảnh với networkx",
+      "id": "d3303fdc-cc7a-43a8-a2a8-6280df77aea3",
+      "parent_id": null,
+      "created_on": "2024-11-10T07:28:37.418Z",
+      "messages": [
+        {
+          "id": "1d7e0184-5937-406a-9261-a1f556a5017e",
+          "messageText": "Đơn giản hoá việc tạo ảnh bằng thư viện khác",
+          "responseText": "Tôi sẽ giúp bạn đơn giản hóa việc tạo ảnh bằng cách sử dụng thư viện `networkx` thay vì `graphviz`. Thư viện này dễ sử dụng hơn và có thể kết hợp với matplotlib để tạo hình ảnh.\n\n```python:code_reportRA.py\n# ... existing imports ...\nimport networkx as nx\nimport matplotlib.pyplot as plt\n\ndef save_detailed_tree_info(save_path, output_file):\n    # ... existing code until visualization part ...\n\n    # Create tree visualization using networkx instead of graphviz\n    G = nx.DiGraph()\n    \n    # Add nodes and edges\n    for layer in range(tree.num_layers):\n        for node in tree.layer_to_nodes.get(layer, []):\n            # Add node with layer information\n            short_text = node.text[:30] + '...' if len(node.text) > 30 else node.text\n            G.add_node(node.index, layer=layer, label=f'Node {node.index}\\n{short_text}')\n            \n            # Add edges to children\n            for child in node.children:\n                G.add_edge(node.index, child)\n    \n    # Create visualization\n    plt.figure(figsize=(15, 10))\n    pos = nx.spring_layout(G)  # or nx.kamada_kawai_layout(G) for alternative layout\n    \n    # Draw nodes\n    nx.draw_networkx_nodes(G, pos, node_color='lightblue', node_size=2000)\n    nx.draw_networkx_edges(G, pos, edge_color='gray', arrows=True)\n    \n    # Add labels\n    labels = nx.get_node_attributes(G, 'label')\n    nx.draw_networkx_labels(G, pos, labels, font_size=8)\n    \n    # Save visualization\n    viz_path = os.path.join(os.path.dirname(output_file), 'tree_viz.png')\n    plt.savefig(viz_path, bbox_inches='tight')\n    plt.close()\n    \n    return tree.num_layers, len(tree.all_nodes)\n\n# ... rest of the code remains the same ...\n```\n\nNhững thay đổi chính:\n1. Thay thế `graphviz` bằng `networkx` và `matplotlib`\n2. Sử dụng `DiGraph` để tạo đồ thị có hướng\n3. Vẽ đồ thị sử dụng spring layout (có thể điều chỉnh bằng các layout khác)\n4. Lưu trực tiếp thành file PNG\n\nƯu điểm của cách này:\n- Không cần cài đặt Graphviz riêng\n- Dễ tùy chỉnh về màu sắc, kích thước\n- Tích hợp tốt với môi trường Python\n- Có nhiều thuật toán layout khác nhau để chọn lựa\n\nLưu ý: Bạn cần cài đặt thư viện networkx:\n```bash\npip install networkx\n```",
+          "model": "claude-3-5-sonnet-20241022",
+          "timestamp": "2024-11-10T07:28:37.418Z",
+          "context": [
+            {
+              "context_type": "selection",
+              "key": "501806d0-1c47-4a46-8293-7b354599bc90",
+              "value": {
+                "human_readable": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_reportRA.py",
+                "uri": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_reportRA.py",
+                "range": {
+                  "startLine": 1,
+                  "startColumn": 1,
+                  "endLine": 86,
+                  "endColumn": 91
+                },
+                "text": "import pickle\r\nfrom datetime import datetime\r\nimport os\r\nimport graphviz\r\n\r\ndef save_detailed_tree_info(save_path, output_file):\r\n    \"\"\"\r\n    Load tree and save both text report and visualization\r\n    \"\"\"\r\n    # Check and create directories\r\n    os.makedirs(os.path.dirname(output_file), exist_ok=True)\r\n    \r\n    # Load tree\r\n    pkl_path = os.path.join(save_path, \"tree.pkl\")\r\n    if not os.path.exists(pkl_path):\r\n        raise FileNotFoundError(f\"Tree file not found at {pkl_path}\")\r\n        \r\n    with open(pkl_path, 'rb') as f:\r\n        tree = pickle.load(f)\r\n    \r\n    # Save text report\r\n    with open(output_file, 'w', encoding='utf-8') as f:\r\n        # Write header with metadata\r\n        f.write(f\"Tree Analysis Report\\n\")\r\n        f.write(f\"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\\n\")\r\n        f.write(f\"Total Layers: {tree.num_layers}\\n\")\r\n        f.write(f\"Total Nodes: {len(tree.all_nodes)}\\n\")\r\n        f.write(\"=\" * 80 + \"\\n\\n\")\r\n\r\n        # Write detailed layer information\r\n        for layer in range(tree.num_layers):\r\n            f.write(f\"\\nLAYER {layer}\\n\")\r\n            f.write(\"-\" * 80 + \"\\n\")\r\n            \r\n            layer_nodes = tree.layer_to_nodes.get(layer, [])\r\n            f.write(f\"Number of nodes in layer: {len(layer_nodes)}\\n\\n\")\r\n            \r\n            for node in layer_nodes:\r\n                f.write(f\"Node ID: {node.index}\\n\")\r\n                f.write(f\"Text: {node.text}\\n\")\r\n                f.write(f\"Children nodes: {sorted(list(node.children))}\\n\")\r\n                f.write(\"-\" * 40 + \"\\n\\n\")\r\n\r\n        # Write root nodes information\r\n        f.write(\"\\nROOT NODES\\n\")\r\n        f.write(\"-\" * 80 + \"\\n\")\r\n        for node in tree.root_nodes.values():\r\n            f.write(f\"Root Node ID: {node.index}\\n\")\r\n            f.write(f\"Text: {node.text}\\n\\n\")\r\n\r\n    # Create tree visualization\r\n    dot = graphviz.Digraph(comment='Tree Structure')\r\n    \r\n    # Add nodes\r\n    for layer in range(tree.num_layers):\r\n        with dot.subgraph(name=f'cluster_{layer}') as c:\r\n            c.attr(label=f'Layer {layer}')\r\n            for node in tree.layer_to_nodes.get(layer, []):\r\n                # Truncate text for display\r\n                short_text = node.text[:30] + '...' if len(node.text) > 30 else node.text\r\n                c.node(str(node.index), f'Node {node.index}\\n{short_text}')\r\n                \r\n                # Add edges to children\r\n                for child in node.children:\r\n                    dot.edge(str(node.index), str(child))\r\n    \r\n    # Save visualization\r\n    viz_path = os.path.join(os.path.dirname(output_file), 'tree_viz')\r\n    dot.render(viz_path, format='png', cleanup=True)\r\n    \r\n    return tree.num_layers, len(tree.all_nodes)\r\n\r\nif __name__ == \"__main__\":\r\n    SAVE_PATH = \"demo/cinderella\"\r\n    OUTPUT_FILE = \"demo/tree_analysis.txt\"\r\n    \r\n    try:\r\n        num_layers, total_nodes = save_detailed_tree_info(SAVE_PATH, OUTPUT_FILE)\r\n        print(f\"Tree analysis saved to {OUTPUT_FILE}\")\r\n        print(f\"Tree visualization saved as demo/tree_viz.png\")\r\n        print(f\"Tree has {num_layers} layers and {total_nodes} total nodes\")\r\n    except Exception as e:\r\n        print(f\"Error: {str(e)}\")\r\n\r\n    print(f\"Đường dẫn đầy đủ: {os.path.abspath(SAVE_PATH)}\")\r\n    print(f\"File tree.pkl tồn tại: {os.path.exists(os.path.join(SAVE_PATH, 'tree.pkl'))}\")"
+              }
+            },
+            {
+              "context_type": "file",
+              "key": "26031f12-1f90-43b4-9043-a92c4e4a2f44",
+              "value": {
+                "human_readable": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_reportRA.py",
+                "uri": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_reportRA.py",
+                "isCurrentFile": true
+              }
+            }
+          ],
+          "kv_store": {
+            "file_paths": [
+              "code_reportRA.py"
+            ]
+          }
+        },
+        {
+          "id": "cadd955b-215c-4cff-877f-076c72be4c08",
+          "messageText": "bug",
+          "responseText": "Có vẻ như có vấn đề với việc cài đặt matplotlib trong môi trường ảo của bạn. Hãy thử các bước sau để khắc phục:\n\n1. Đầu tiên, hãy đảm bảo bạn đang ở trong môi trường ảo (.venv) và thử cài đặt lại matplotlib:\n\n```bash\npip uninstall matplotlib\npip install matplotlib\n```\n\n2. Nếu vẫn không được, thử cài đặt với phiên bản cụ thể:\n\n```bash\npip install matplotlib==3.7.1\n```\n\n3. Nếu vẫn gặp lỗi, có thể thử cách sau:\n   - Thoát khỏi môi trường ảo\n   - Xóa và tạo lại môi trường ảo:\n```bash\ndeactivate\nrm -rf .venv\npython -m venv .venv\n.venv\\Scripts\\activate\npip install matplotlib networkx\n```\n\n4. Hoặc nếu bạn muốn một giải pháp thay thế tạm thời, chúng ta có thể sử dụng phiên bản đơn giản hơn của code mà không cần matplotlib:\n\n```python:code_reportRA.py\nimport pickle\nfrom datetime import datetime\nimport os\nimport networkx as nx\n\ndef save_detailed_tree_info(save_path, output_file):\n    \"\"\"\n    Load tree and save text report only\n    \"\"\"\n    # Check and create directories\n    os.makedirs(os.path.dirname(output_file), exist_ok=True)\n    \n    # Load tree\n    pkl_path = os.path.join(save_path, \"tree.pkl\")\n    if not os.path.exists(pkl_path):\n        raise FileNotFoundError(f\"Tree file not found at {pkl_path}\")\n        \n    with open(pkl_path, 'rb') as f:\n        tree = pickle.load(f)\n    \n    # Save text report only\n    with open(output_file, 'w', encoding='utf-8') as f:\n        f.write(f\"Tree Analysis Report\\n\")\n        f.write(f\"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\\n\")\n        f.write(f\"Total Layers: {tree.num_layers}\\n\")\n        f.write(f\"Total Nodes: {len(tree.all_nodes)}\\n\")\n        f.write(\"=\" * 80 + \"\\n\\n\")\n\n        for layer in range(tree.num_layers):\n            f.write(f\"\\nLAYER {layer}\\n\")\n            f.write(\"-\" * 80 + \"\\n\")\n            \n            layer_nodes = tree.layer_to_nodes.get(layer, [])\n            f.write(f\"Number of nodes in layer: {len(layer_nodes)}\\n\\n\")\n            \n            for node in layer_nodes:\n                f.write(f\"Node ID: {node.index}\\n\")\n                f.write(f\"Text: {node.text}\\n\")\n                f.write(f\"Children nodes: {sorted(list(node.children))}\\n\")\n                f.write(\"-\" * 40 + \"\\n\\n\")\n\n        f.write(\"\\nROOT NODES\\n\")\n        f.write(\"-\" * 80 + \"\\n\")\n        for node in tree.root_nodes.values():\n            f.write(f\"Root Node ID: {node.index}\\n\")\n            f.write(f\"Text: {node.text}\\n\\n\")\n    \n    return tree.num_layers, len(tree.all_nodes)\n\nif __name__ == \"__main__\":\n    SAVE_PATH = \"demo/cinderella\"\n    OUTPUT_FILE = \"demo/tree_analysis.txt\"\n    \n    try:\n        num_layers, total_nodes = save_detailed_tree_info(SAVE_PATH, OUTPUT_FILE)\n        print(f\"Tree analysis saved to {OUTPUT_FILE}\")\n        print(f\"Tree has {num_layers} layers and {total_nodes} total nodes\")\n    except Exception as e:\n        print(f\"Error: {str(e)}\")\n\n    print(f\"Đường dẫn đầy đủ: {os.path.abspath(SAVE_PATH)}\")\n    print(f\"File tree.pkl tồn tại: {os.path.exists(os.path.join(SAVE_PATH, 'tree.pkl'))}\")\n```\n\nPhiên bản này chỉ tạo báo cáo văn bản mà không tạo hình ảnh. Sau khi bạn giải quyết được vấn đề với matplotlib, chúng ta có thể thêm lại phần tạo hình ảnh.",
+          "model": "claude-3-5-sonnet-20241022",
+          "timestamp": "2024-11-10T07:30:46.563Z",
+          "context": [
+            {
+              "context_type": "file",
+              "key": "d3838b94-aeed-429d-a3ff-a9c4809e3849",
+              "value": {
+                "human_readable": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_reportRA.py",
+                "uri": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_reportRA.py",
+                "isCurrentFile": true
+              }
+            }
+          ],
+          "kv_store": {
+            "file_paths": [
+              "code_reportRA.py"
+            ]
+          }
+        },
+        {
+          "id": "0cabfe43-3076-4600-9fd1-74d0bae638a7",
+          "messageText": "Bug",
+          "responseText": "Lỗi này xảy ra vì không tìm thấy file `tree.pkl` trong đường dẫn đã chỉ định. Hãy kiểm tra và tạo cấu trúc thư mục cần thiết:\n\n1. Đầu tiên, sửa lại code để tạo thư mục nếu chưa tồn tại:\n\n```python:code_reportRA.py\n# ... existing imports ...\n\ndef save_detailed_tree_info(save_path, output_file):\n    \"\"\"\n    Load tree and save text report only\n    \"\"\"\n    # Create both directories\n    os.makedirs(save_path, exist_ok=True)\n    os.makedirs(os.path.dirname(output_file), exist_ok=True)\n    \n    # Create a sample tree if tree.pkl doesn't exist\n    pkl_path = os.path.join(save_path, \"tree.pkl\")\n    if not os.path.exists(pkl_path):\n        print(f\"Creating sample tree at {pkl_path}\")\n        # Create a simple tree structure for testing\n        class Node:\n            def __init__(self, index, text):\n                self.index = index\n                self.text = text\n                self.children = set()\n\n        class Tree:\n            def __init__(self):\n                self.num_layers = 2\n                self.all_nodes = {}\n                self.layer_to_nodes = {0: [], 1: []}\n                self.root_nodes = {}\n                \n                # Create sample nodes\n                node1 = Node(1, \"Root node\")\n                node2 = Node(2, \"Child node 1\")\n                node3 = Node(3, \"Child node 2\")\n                \n                # Set up relationships\n                node1.children.add(2)\n                node1.children.add(3)\n                \n                # Add nodes to tree\n                self.all_nodes = {1: node1, 2: node2, 3: node3}\n                self.layer_to_nodes[0] = [node1]\n                self.layer_to_nodes[1] = [node2, node3]\n                self.root_nodes = {1: node1}\n        \n        # Save sample tree\n        tree = Tree()\n        with open(pkl_path, 'wb') as f:\n            pickle.dump(tree, f)\n    \n    # Rest of the function remains the same\n    with open(pkl_path, 'rb') as f:\n        tree = pickle.load(f)\n    \n    # ... rest of the existing code ...\n\nif __name__ == \"__main__\":\n    # Use absolute path for testing\n    current_dir = os.path.dirname(os.path.abspath(__file__))\n    SAVE_PATH = os.path.join(current_dir, \"demo\", \"cinderella\")\n    OUTPUT_FILE = os.path.join(current_dir, \"demo\", \"tree_analysis.txt\")\n    \n    try:\n        num_layers, total_nodes = save_detailed_tree_info(SAVE_PATH, OUTPUT_FILE)\n        print(f\"Tree analysis saved to {OUTPUT_FILE}\")\n        print(f\"Tree has {num_layers} layers and {total_nodes} total nodes\")\n    except Exception as e:\n        print(f\"Error: {str(e)}\")\n\n    print(f\"Đường dẫn đầy đủ: {os.path.abspath(SAVE_PATH)}\")\n    print(f\"File tree.pkl tồn tại: {os.path.exists(os.path.join(SAVE_PATH, 'tree.pkl'))}\")\n```\n\nNhững thay đổi chính:\n1. Tự động tạo thư mục nếu chưa tồn tại\n2. Tạo một cây mẫu nếu file `tree.pkl` chưa tồn tại\n3. Sử dụng đường dẫn tuyệt đối thay vì đường dẫn tương đối\n4. Thêm thông báo khi tạo cây mẫu\n\nBây giờ khi chạy code:\n1. Nó sẽ tạo thư mục `demo/cinderella` nếu chưa tồn tại\n2. Tạo một cây mẫu và lưu vào `tree.pkl` nếu file chưa tồn tại\n3. Tạo báo cáo phân tích từ cây đó\n\nĐiều này sẽ giúp bạn kiểm tra xem code có hoạt động đúng không trước khi sử dụng với dữ liệu thực tế.",
+          "model": "claude-3-5-sonnet-20241022",
+          "timestamp": "2024-11-10T07:31:49.008Z",
+          "context": [
+            {
+              "context_type": "file",
+              "key": "ddd6143f-11a9-4657-9d27-3d79ba8f33ca",
+              "value": {
+                "human_readable": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_reportRA.py",
+                "uri": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_reportRA.py",
+                "isCurrentFile": true
+              }
+            }
+          ],
+          "kv_store": {
+            "file_paths": [
+              "code_reportRA.py"
+            ]
+          }
+        },
+        {
+          "id": "e618ee8c-fce9-4745-af3c-b02eda5399ba",
+          "messageText": "demo/cinderella file này là gì",
+          "responseText": "`demo/cinderella` là một thư mục mẫu được sử dụng để lưu trữ dữ liệu của cây (tree). Trong trường hợp này:\n\n1. `demo` là thư mục chính\n2. `cinderella` là thư mục con trong `demo`\n3. Trong thư mục `cinderella` sẽ chứa file `tree.pkl` - file này lưu trữ cấu trúc cây dữ liệu\n\nCấu trúc thư mục sẽ như sau:\n```\nyour_project_folder/\n├── code_reportRA.py\n├── demo/\n│   ├── cinderella/\n│   │   └── tree.pkl\n│   └── tree_analysis.txt\n```\n\nTrong đó:\n- `tree.pkl`: Lưu trữ cấu trúc cây dữ liệu (được serialize bằng pickle)\n- `tree_analysis.txt`: File báo cáo phân tích cây\n\nBạn có thể thay đổi đường dẫn này thành bất kỳ đường dẫn nào khác bằng cách sửa biến `SAVE_PATH` trong code. Ví dụ:\n\n```python:code_reportRA.py\nif __name__ == \"__main__\":\n    # Thay đổi đường dẫn theo ý muốn\n    current_dir = os.path.dirname(os.path.abspath(__file__))\n    SAVE_PATH = os.path.join(current_dir, \"data\", \"my_tree\")  # thay đổi thành data/my_tree\n    OUTPUT_FILE = os.path.join(current_dir, \"output\", \"analysis.txt\")  # thay đổi thành output/analysis.txt\n```\n\nTên \"cinderella\" có vẻ là một tên mẫu và không có ý nghĩa đặc biệt. Bạn có thể đổi nó thành tên khác phù hợp với dự án của mình.",
+          "model": "claude-3-5-sonnet-20241022",
+          "timestamp": "2024-11-10T07:33:00.279Z",
+          "context": [
+            {
+              "context_type": "file",
+              "key": "5d99f4bf-5874-46ae-8c28-6310ff2f91b2",
+              "value": {
+                "human_readable": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_reportRA.py",
+                "uri": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_reportRA.py",
+                "isCurrentFile": true
+              }
+            }
+          ],
+          "kv_store": {}
+        },
+        {
+          "id": "397c9a0b-764c-4763-82be-9117075ba96f",
+          "messageText": "Xem code @code_testReadme_4omini.py  xem đã tạo tree chưa?",
+          "responseText": "Dựa vào code `code_testReadme_4omini.py`, tôi thấy cây (tree) đã được tạo thông qua các bước sau:\n\n1. Tạo cây khi thêm tài liệu:\n```python\nRA = RetrievalAugmentation()\nRA.add_documents(text)  # Tạo cây từ nội dung file sample.txt\n```\n\n2. Lưu cây vào thư mục `demo/cinderella`:\n```python\nSAVE_PATH = \"demo/cinderella\"\nRA.save(SAVE_PATH)  # Lưu cây vào file tree.pkl trong thư mục này\n```\n\nĐể kiểm tra xem cây đã được tạo chưa, bạn có thể:\n\n1. Thêm đoạn code kiểm tra vào cuối file:\n```python:code_testReadme_4omini.py\n# Kiểm tra cây đã được tạo chưa\ntree_path = os.path.join(SAVE_PATH, \"tree.pkl\")\nprint(f\"\\nKiểm tra cây:\")\nprint(f\"- Đường dẫn đầy đủ: {os.path.abspath(SAVE_PATH)}\")\nprint(f\"- File tree.pkl tồn tại: {os.path.exists(tree_path)}\")\n```\n\n2. Hoặc kiểm tra trực tiếp trong thư mục `demo/cinderella` xem có file `tree.pkl` không.\n\nNếu bạn thấy lỗi \"Tree file not found\" từ `code_reportRA.py`, có thể là do:\n- Chưa chạy `code_testReadme_4omini.py` để tạo cây\n- Hoặc đường dẫn trong hai file không trùng khớp\n\nĐảm bảo bạn:\n1. Chạy `code_testReadme_4omini.py` trước để tạo cây\n2. Sau đó mới chạy `code_reportRA.py` để phân tích cây",
+          "model": "claude-3-5-sonnet-20241022",
+          "timestamp": "2024-11-10T07:33:00.279Z",
+          "context": [
+            {
+              "context_type": "file",
+              "key": "98f436a5-1e98-4faf-adff-59e9aa9085a9",
+              "value": {
+                "human_readable": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_reportRA.py",
+                "uri": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_reportRA.py",
+                "isCurrentFile": true
+              }
+            },
+            {
+              "context_type": "file",
+              "key": "70b98266-0e09-47c4-a003-57a97b529dbe",
+              "value": {
+                "human_readable": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_testReadme_4omini.py",
+                "uri": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_testReadme_4omini.py",
+                "isCurrentFile": false
+              }
+            }
+          ],
+          "kv_store": {
+            "file_paths": [
+              "code_testReadme_4omini.py",
+              "code_testReadme_4omini copy.py"
+            ],
+            "file_path_dict": {
+              "2": "code_testReadme_4omini copy.py"
+            }
+          }
+        },
+        {
+          "id": "6c00cac5-7afe-4c06-9580-cf656742a992",
+          "messageText": "Chỉnh số layer ở đâu, số lượng nodes của 1 layer ở đâu?? @raptor",
+          "responseText": "Dựa trên code được cung cấp, có thể điều chỉnh số layer và số lượng nodes của một layer tại các vị trí sau:\n\n1. Số layer được cấu hình trong `TreeBuilderConfig`:\n\n```48:52:raptor/tree_builder.py\n        if num_layers is None:\r\n            num_layers = 5\r\n        if not isinstance(num_layers, int) or num_layers < 1:\r\n            raise ValueError(\"num_layers must be an integer and at least 1\")\r\n        self.num_layers = num_layers\r\n```\n\n\nMặc định là 5 layers, bạn có thể thay đổi khi khởi tạo config:\n```python\nconfig = TreeBuilderConfig(num_layers=3)  # Thay đổi thành 3 layers\n```\n\n2. Số lượng nodes trong một layer được điều khiển bởi 2 tham số chính:\n\na. `top_k` trong `TreeBuilderConfig`:\n\n```60:63:raptor/tree_builder.py\n        if top_k is None:\r\n            top_k = 5\r\n        if not isinstance(top_k, int) or top_k < 1:\r\n            raise ValueError(\"top_k must be an integer and at least 1\")\n```\n\n\nb. `reduction_dimension` trong `ClusterTreeConfig`:\n\n```20:22:raptor/cluster_tree_builder.py\n        reduction_dimension=10,\r\n        clustering_algorithm=RAPTOR_Clustering,  # Default to RAPTOR clustering\r\n        clustering_params={},  # Pass additional params as a dict\r\n```\n\n\nVí dụ cách cấu hình:\n```python\nconfig = ClusterTreeConfig(\n    num_layers=3,           # Số layers\n    top_k=3,               # Số nodes được chọn khi dùng mode \"top_k\"\n    reduction_dimension=5   # Số nodes tối đa trong mỗi cluster\n)\n```\n\nLưu ý quan trọng về số nodes trong layer:\n1. Khi sử dụng ClusterTreeBuilder, số nodes trong mỗi layer sẽ giảm dần khi đi lên trên (từ leaf nodes lên root)\n2. Việc dừng tạo layer được kiểm soát bởi điều kiện:\n\n```95:100:raptor/cluster_tree_builder.py\n            if len(node_list_current_layer) <= self.reduction_dimension + 1:\r\n                self.num_layers = layer\r\n                logging.info(\r\n                    f\"Stopping Layer construction: Cannot Create More Layers. Total Layers in tree: {layer}\"\r\n                )\r\n                break\r\n```\n\n\nNếu số nodes trong layer hiện tại nhỏ hơn hoặc bằng `reduction_dimension + 1`, quá trình tạo layer sẽ dừng lại.",
+          "model": "claude-3-5-sonnet-20241022",
+          "timestamp": "2024-11-10T07:34:57.630Z",
+          "context": [
+            {
+              "context_type": "file",
+              "key": "dc52df40-1ea1-41ff-b2cc-7adb56ef5d82",
+              "value": {
+                "human_readable": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\raptor\\tree_retriever.py",
+                "uri": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\raptor\\tree_retriever.py",
+                "isCurrentFile": true
+              }
+            },
+            {
+              "context_type": "folder",
+              "key": "75bf1af1-dd26-4d3e-a0aa-65af9d282580",
+              "value": {
+                "human_readable": "/raptor",
+                "relativePath": "/raptor"
+              }
+            }
+          ],
+          "kv_store": {
+            "file_paths": [
+              "raptor/cluster_tree_builder.py",
+              "raptor/tree_builder.py",
+              "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\Note3.ipynb"
+            ],
+            "file_path_dict": {
+              "0": "raptor/tree_builder.py",
+              "1": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\Note3.ipynb",
+              "2": "raptor/tree_builder.py",
+              "3": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\Note3.ipynb",
+              "4": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\Note3.ipynb",
+              "5": "raptor/cluster_tree_builder.py"
+            }
+          }
+        },
+        {
+          "id": "4be46545-f146-46ef-a0ab-a71bc112737a",
+          "messageText": "Config vào code",
+          "responseText": "Để cấu hình số layer và số nodes trong mỗi layer, bạn có thể thêm config khi khởi tạo RetrievalAugmentation. Đây là cách sửa code:\n\n```python:code_testReadme_4omini.py\n# Import thêm config class\nfrom raptor import RetrievalAugmentation, RetrievalAugmentationConfig\n\n# ... các import khác giữ nguyên ...\n\n# Bước 1: Thiết lập môi trường và cấu hình RAPTOR\n# Tạo config với các tham số tùy chỉnh\nconfig = RetrievalAugmentationConfig(\n    # Cấu hình cho TreeBuilder\n    tb_num_layers=3,              # Số layer trong cây (mặc định là 5)\n    tb_top_k=3,                   # Số nodes được chọn trong mỗi layer\n    tb_max_tokens=100,            # Số token tối đa cho mỗi node\n    \n    # Cấu hình cho TreeRetriever\n    tr_top_k=5,                   # Số nodes được retrieve trong mỗi query\n    tr_num_layers=2,              # Số layer được dùng để retrieve\n    \n    # Cấu hình cho ClusterTreeBuilder\n    tree_builder_type=\"cluster\",  # Loại tree builder\n)\n\n# Khởi tạo RetrievalAugmentation với config\nRA = RetrievalAugmentation(config=config)\n\n# ... phần code còn lại giữ nguyên ...\n```\n\nCác tham số quan trọng để điều chỉnh cấu trúc cây:\n\n1. TreeBuilder config (tham chiếu từ code):\n\n```38:52:raptor/tree_builder.py\n        if tokenizer is None:\r\n            tokenizer = tiktoken.get_encoding(\"cl100k_base\")\r\n        self.tokenizer = tokenizer\r\n\r\n        if max_tokens is None:\r\n            max_tokens = 100\r\n        if not isinstance(max_tokens, int) or max_tokens < 1:\r\n            raise ValueError(\"max_tokens must be an integer and at least 1\")\r\n        self.max_tokens = max_tokens\r\n\r\n        if num_layers is None:\r\n            num_layers = 5\r\n        if not isinstance(num_layers, int) or num_layers < 1:\r\n            raise ValueError(\"num_layers must be an integer and at least 1\")\r\n        self.num_layers = num_layers\r\n```\n\n\n2. ClusterTreeBuilder config (tham chiếu từ code):\n\n```20:22:raptor/cluster_tree_builder.py\n        reduction_dimension=10,\r\n        clustering_algorithm=RAPTOR_Clustering,  # Default to RAPTOR clustering\r\n        clustering_params={},  # Pass additional params as a dict\r\n```\n\n\n3. TreeRetriever config (tham chiếu từ code):\n\n```41:45:raptor/tree_retriever.py\n        if top_k is None:\r\n            top_k = 5\r\n        if not isinstance(top_k, int) or top_k < 1:\r\n            raise ValueError(\"top_k must be an integer and at least 1\")\r\n        self.top_k = top_k\r\n```\n\n\nLưu ý:\n- `tb_num_layers`: Số layer trong cây (càng nhiều layer thì cây càng cao)\n- `tb_top_k`: Số nodes được chọn trong mỗi layer (càng lớn thì mỗi layer càng rộng)\n- `reduction_dimension`: Số nodes tối đa trong mỗi cluster (điều chỉnh qua clustering_params)",
+          "model": "claude-3-5-sonnet-20241022",
+          "timestamp": "2024-11-10T07:36:39.288Z",
+          "context": [
+            {
+              "context_type": "file",
+              "key": "1eef6ad4-53ef-4750-94e7-1ff4d55b2a59",
+              "value": {
+                "human_readable": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_testReadme_4omini.py",
+                "uri": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_testReadme_4omini.py",
+                "isCurrentFile": true
+              }
+            }
+          ],
+          "kv_store": {
+            "file_paths": [
+              "code_testReadme_4omini.py",
+              "code_testReadme_4omini_v3.py",
+              "raptor/cluster_tree_builder.py"
+            ],
+            "file_path_dict": {
+              "0": "code_testReadme_4omini_v3.py",
+              "2": "raptor/cluster_tree_builder.py"
+            }
+          }
+        },
+        {
+          "id": "3c41e52b-d723-4992-9556-8fbeb27acd0c",
+          "messageText": "config cái này nữa reduction_dimension",
+          "responseText": "Để cấu hình `reduction_dimension`, bạn cần thêm tham số này vào config. Đây là cách sửa code:\n\n```python:code_testReadme_4omini_v3.py\n# Bước 1: Thiết lập môi trường và cấu hình RAPTOR\nconfig = RetrievalAugmentationConfig(\n    # Cấu hình cho TreeBuilder\n    tb_num_layers=3,              # Số layer trong cây (mặc định là 5)\n    tb_top_k=3,                   # Số nodes được chọn trong mỗi layer\n    tb_max_tokens=100,            # Số token tối đa cho mỗi node\n    \n    # Cấu hình cho TreeRetriever\n    tr_top_k=5,                   # Số nodes được retrieve trong mỗi query\n    tr_num_layers=2,              # Số layer được dùng để retrieve\n    \n    # Cấu hình cho ClusterTreeBuilder\n    tree_builder_type=\"cluster\",  # Loại tree builder\n    tb_cluster_embedding_model=\"OpenAI\",  # Model embedding cho clustering\n    reduction_dimension=3,        # Số nodes tối đa trong mỗi cluster\n)\n```\n\nTham số `reduction_dimension` ảnh hưởng đến việc xây dựng cây theo cách sau (tham chiếu từ code):\n\n\n```95:100:raptor/cluster_tree_builder.py\n            if len(node_list_current_layer) <= self.reduction_dimension + 1:\r\n                self.num_layers = layer\r\n                logging.info(\r\n                    f\"Stopping Layer construction: Cannot Create More Layers. Total Layers in tree: {layer}\"\r\n                )\r\n                break\r\n```\n\n\nKhi số nodes trong layer hiện tại nhỏ hơn hoặc bằng `reduction_dimension + 1`, quá trình tạo layer sẽ dừng lại.\n\nCác tham số quan trọng:\n- `reduction_dimension`: Số nodes tối đa trong mỗi cluster (mặc định là 10)\n- `tb_num_layers`: Số layer tối đa muốn tạo (mặc định là 5)\n- `tb_top_k`: Số nodes được chọn trong mỗi layer (mặc định là 5)\n\nLưu ý: Số layer thực tế có thể ít hơn `tb_num_layers` nếu số nodes trong một layer giảm xuống dưới `reduction_dimension + 1",
+          "model": "claude-3-5-sonnet-20241022",
+          "timestamp": "2024-11-10T07:39:08.453Z",
+          "context": [
+            {
+              "context_type": "file",
+              "key": "82f168a4-ce4e-43cd-8bcb-f4f0bfaca269",
+              "value": {
+                "human_readable": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_testReadme_4omini_v3.py",
+                "uri": "d:\\OneDrive - Hanoi University of Science and Technology\\GIT\\RAG_RAPTOR\\code_testReadme_4omini_v3.py",
+                "isCurrentFile": true
+              }
+            }
+          ],
+          "kv_store": {
+            "file_paths": [
+              "code_testReadme_4omini_v3.py"
+            ]
+          }
+        }
+      ],
+      "kv_store": {}
+    },
+    {
+      "ai_editor": "cursor",
+      "customTitle": "Cấu hình layer và kích thước chunk trong RAPTOR",
+      "id": "a14c650f-0e60-4bbb-aa94-d7b1aa3095ec",
+      "parent_id": null,
+      "created_on": "2024-11-10T07:14:59.682Z",
+      "messages": [
+        {
+          "id": "ad247e19-53bf-471a-958b-6972d70a60e5",
+          "messageText": "@raptor \ncách set layer, set chunk size?",
+          "responseText": "Tôi sẽ giải thích cách cấu hình layer và chunk size trong RAPTOR:\n\n### 1. Cấu hình Layer\n\nBạn có thể cấu hình số layer thông qua các tham số sau:\n\n1. Trong `TreeBuilderConfig`:\n\n```24:52:raptor/tree_builder.py\nclass TreeBuilderConfig:\r\n    def __init__(\r\n        self,\r\n        tokenizer=None,\r\n        max_tokens=None,\r\n        num_layers=None,\r\n        threshold=None,\r\n        top_k=None,\r\n        selection_mode=None,\r\n        summarization_length=None,\r\n        summarization_model=None,\r\n        embedding_models=None,\r\n        cluster_embedding_model=None,\r\n    ):\r\n        if tokenizer is None:\r\n            tokenizer = tiktoken.get_encoding(\"cl100k_base\")\r\n        self.tokenizer = tokenizer\r\n\r\n        if max_tokens is None:\r\n            max_tokens = 100\r\n        if not isinstance(max_tokens, int) or max_tokens < 1:\r\n            raise ValueError(\"max_tokens must be an integer and at least 1\")\r\n        self.max_tokens = max_tokens\r\n\r\n        if num_layers is None:\r\n            num_layers = 5\r\n        if not isinstance(num_layers, int) or num_layers < 1:\r\n            raise ValueError(\"num_layers must be an integer and at least 1\")\r\n        self.num_layers = num_layers\r\n```\n\n\n- Sử dụng tham số `num_layers` khi khởi tạo config (mặc định là 5)\n\n2. Trong `TreeRetrieverConfig`:\n\n```19:80:raptor/tree_retriever.py\nclass TreeRetrieverConfig:\r\n    def __init__(\r\n        self,\r\n        tokenizer=None,\r\n        threshold=None,\r\n        top_k=None,\r\n        selection_mode=None,\r\n        context_embedding_model=None,\r\n        embedding_model=None,\r\n        num_layers=None,\r\n        start_layer=None,\r\n    ):\r\n        if tokenizer is None:\r\n            tokenizer = tiktoken.get_encoding(\"cl100k_base\")\r\n        self.tokenizer = tokenizer\r\n\r\n        if threshold is None:\r\n            threshold = 0.5\r\n        if not isinstance(threshold, float) or not (0 <= threshold <= 1):\r\n            raise ValueError(\"threshold must be a float between 0 and 1\")\r\n        self.threshold = threshold\r\n\r\n        if top_k is None:\r\n            top_k = 5\r\n        if not isinstance(top_k, int) or top_k < 1:\r\n            raise ValueError(\"top_k must be an integer and at least 1\")\r\n        self.top_k = top_k\r\n\r\n        if selection_mode is None:\r\n            selection_mode = \"top_k\"\r\n        if not isinstance(selection_mode, str) or selection_mode not in [\r\n            \"top_k\",\r\n            \"threshold\",\r\n        ]:\r\n            raise ValueError(\r\n                \"selection_mode must be a string and either 'top_k' or 'threshold'\"\r\n            )\r\n        self.selection_mode = selection_mode\r\n\r\n        if context_embedding_model is None:\r\n            context_embedding_model = \"OpenAI\"\n        if not isinstance(context_embedding_model, str):\r\n            raise ValueError(\"context_embedding_model must be a string\")\r\n        self.context_embedding_model = context_embedding_model\r\n\r\n        if embedding_model is None:\r\n            embedding_model = OpenAIEmbeddingModel()\r\n        if not isinstance(embedding_model, BaseEmbeddingModel):\r\n            raise ValueError(\r\n                \"embedding_model must be an instance of BaseEmbeddingModel\"\r\n            )\r\n        self.embedding_model = embedding_model\r\n\r\n        if num_layers is not None:\r\n            if not isinstance(num_layers, int) or num_layers < 0:\r\n                raise ValueError(\"num_layers must be an integer and at least 0\")\r\n        self.num_layers = num_layers\r\n\r\n        if start_layer is not None:\r\n            if not isinstance(start_layer, int) or start_layer < 0:\r\n                raise ValueError(\"start_layer must be an integer and at least 0\")\r\n        self.start_layer = start_layer\n```\n\n\n- `num_layers`: Số layer muốn duyệt qua\n- `start_layer`: Layer bắt đầu tìm kiếm\n\nVí dụ cách sử dụng:\n\n```python\nconfig = TreeBuilderConfig(\n    num_layers=3  # Set số layer trong cây là 3\n)\n\nretriever_config = TreeRetrieverConfig(\n    start_layer=2,  # Bắt đầu tìm từ layer 2\n    num_layers=1    # Duyệt qua 1 layer\n)\n```\n\n### 2. Cấu hình Chunk Size\n\nCó 2 cách để cấu hình kích thước chunk:\n\n1. Thông qua `TreeBuilderConfig`:\n\n```38:46:raptor/tree_builder.py\n        if tokenizer is None:\r\n            tokenizer = tiktoken.get_encoding(\"cl100k_base\")\r\n        self.tokenizer = tokenizer\r\n\r\n        if max_tokens is None:\r\n            max_tokens = 100\r\n        if not isinstance(max_tokens, int) or max_tokens < 1:\r\n            raise ValueError(\"max_tokens must be an integer and at least 1\")\r\n        self.max_tokens = max_tokens\r\n```\n\n\n- Sử dụng tham số `max_tokens` (mặc định là 100 tokens)\n\n2. Thông qua `FaissRetrieverConfig`:\n\n```14:56:raptor/FaissRetriever.py\nclass FaissRetrieverConfig:\r\n    def __init__(\r\n        self,\r\n        max_tokens=100,\r\n        max_context_tokens=3500,\r\n        use_top_k=False,\r\n        embedding_model=None,\r\n        question_embedding_model=None,\r\n        top_k=5,\r\n        tokenizer=tiktoken.get_encoding(\"cl100k_base\"),\r\n        embedding_model_string=None,\r\n    ):\r\n        if max_tokens < 1:\r\n            raise ValueError(\"max_tokens must be at least 1\")\r\n\r\n        if top_k < 1:\r\n            raise ValueError(\"top_k must be at least 1\")\r\n\r\n        if max_context_tokens is not None and max_context_tokens < 1:\r\n            raise ValueError(\"max_context_tokens must be at least 1 or None\")\r\n\r\n        if embedding_model is not None and not isinstance(\r\n            embedding_model, BaseEmbeddingModel\r\n        ):\r\n            raise ValueError(\r\n                \"embedding_model must be an instance of BaseEmbeddingModel or None\"\r\n            )\r\n\r\n        if question_embedding_model is not None and not isinstance(\r\n            question_embedding_model, BaseEmbeddingModel\r\n        ):\r\n            raise ValueError(\r\n                \"question_embedding_model must be an instance of BaseEmbeddingModel or None\"\r\n            )\r\n\r\n        self.top_k = top_k\r\n        self.max_tokens = max_tokens\r\n        self.max_context_tokens = max_context_tokens\r\n        self.use_top_k = use_top_k\r\n        self.embedding_model = embedding_model or OpenAIEmbeddingModel()\r\n        self.question_embedding_model = question_embedding_model or self.embedding_model\r\n        self.tokenizer = tokenizer\r\n        self.embedding_model_string = embedding_model_string or \"OpenAI\"\n```\n\n\n- `max_tokens`: Kích thước tối đa của mỗi chunk\n- `max_context_tokens`: Tổng số tokens tối đa cho context\n\nVí dụ:\n\n```python\ntree_config = TreeBuilderConfig(\n    max_tokens=200  # Mỗi chunk có tối đa 200 tokens\n)\n\nfaiss_config = FaissRetrieverConfig(\n    max_tokens=150,           # Mỗi chunk có tối đa 150 tokens  \n    max_context_tokens=3000   # Tổng context tối đa 3000 tokens\n)\n```\n\nLưu ý:\n- Chunk size nhỏ hơn sẽ cho phép tìm kiếm chính xác hơn nhưng tốn nhiều tài nguyên hơn\n- Số layer nhiều sẽ tạo ra cây sâu hơn, phù hợp với tài liệu dài\n- Nên cân nhắc giữa performance và độ chính xác khi cấu hình các tham số này",
+          "model": "claude-3-5-sonnet-20241022",
+          "timestamp": "2024-11-10T07:14:59.682Z",
+          "context": [
+            {
+              "context_type": "folder",
+              "key": "5634f2bf-1f5a-4135-8290-37e615b6ae6b",
+              "value": {
+                "human_readable": "/raptor",
+                "relativePath": "/raptor"
+              }
+            }
+          ],
+          "kv_store": {
+            "file_paths": [
+              "raptor/FaissRetriever.py",
+              "raptor/tree_builder.py",
+              "raptor/tree_retriever.py"
+            ],
+            "file_path_dict": {
+              "0": "raptor/tree_builder.py",
+              "1": "raptor/tree_retriever.py",
+              "3": "raptor/tree_builder.py"
+            }
+          }
+        }
+      ],
+      "kv_store": {}
+    }
+  ],
   "inlineChats": [],
   "schemaVersion": "1.0",
   "deletedChats": {
@@ -7,9 +368,14 @@
     "deletedPanelChatIDs": []
   },
   "kv_store": {
-    "unique_matched_lines_count": 0,
-    "total_repo_line_count": 4896,
-    "best_prompt_response": null,
+    "unique_matched_lines_count": 167,
+    "total_repo_line_count": 4840,
+    "best_prompt_response": {
+      "prompt": "@raptor \ncách set layer, set chunk size?",
+      "response": "Tôi sẽ giải thích cách cấu hình layer và chunk size trong RAPTOR:\n\n### 1. Cấu hình Layer\n\nBạn có thể cấu hình số layer thông qua các tham số sau:\n\n1. Trong `TreeBuilderConfig`:\n\n```24:52:raptor/tree_builder.py\nclass TreeBuilderConfig:\r\n    def __init__(\r\n        self,\r\n        tokenizer=None,\r\n        max_tokens=None,\r\n        num_layers=None,\r\n        threshold=None,\r\n        top_k=None,\r\n        selection_mode=None,\r\n        summarization_length=None,\r\n        summarization_model=None,\r\n        embedding_models=None,\r\n        cluster_embedding_model=None,\r\n    ):\r\n        if tokenizer is None:\r\n            tokenizer = tiktoken.get_encoding(\"cl100k_base\")\r\n        self.tokenizer = tokenizer\r\n\r\n        if max_tokens is None:\r\n            max_tokens = 100\r\n        if not isinstance(max_tokens, int) or max_tokens < 1:\r\n            raise ValueError(\"max_tokens must be an integer and at least 1\")\r\n        self.max_tokens = max_tokens\r\n\r\n        if num_layers is None:\r\n            num_layers = 5\r\n        if not isinstance(num_layers, int) or num_layers < 1:\r\n            raise ValueError(\"num_layers must be an integer and at least 1\")\r\n        self.num_layers = num_layers\r\n```\n\n\n- Sử dụng tham số `num_layers` khi khởi tạo config (mặc định là 5)\n\n2. Trong `TreeRetrieverConfig`:\n\n```19:80:raptor/tree_retriever.py\nclass TreeRetrieverConfig:\r\n    def __init__(\r\n        self,\r\n        tokenizer=None,\r\n        threshold=None,\r\n        top_k=None,\r\n        selection_mode=None,\r\n        context_embedding_model=None,\r\n        embedding_model=None,\r\n        num_layers=None,\r\n        start_layer=None,\r\n    ):\r\n        if tokenizer is None:\r\n            tokenizer = tiktoken.get_encoding(\"cl100k_base\")\r\n        self.tokenizer = tokenizer\r\n\r\n        if threshold is None:\r\n            threshold = 0.5\r\n        if not isinstance(threshold, float) or not (0 <= threshold <= 1):\r\n            raise ValueError(\"threshold must be a float between 0 and 1\")\r\n        self.threshold = threshold\r\n\r\n        if top_k is None:\r\n            top_k = 5\r\n        if not isinstance(top_k, int) or top_k < 1:\r\n            raise ValueError(\"top_k must be an integer and at least 1\")\r\n        self.top_k = top_k\r\n\r\n        if selection_mode is None:\r\n            selection_mode = \"top_k\"\r\n        if not isinstance(selection_mode, str) or selection_mode not in [\r\n            \"top_k\",\r\n            \"threshold\",\r\n        ]:\r\n            raise ValueError(\r\n                \"selection_mode must be a string and either 'top_k' or 'threshold'\"\r\n            )\r\n        self.selection_mode = selection_mode\r\n\r\n        if context_embedding_model is None:\r\n            context_embedding_model = \"OpenAI\"\n        if not isinstance(context_embedding_model, str):\r\n            raise ValueError(\"context_embedding_model must be a string\")\r\n        self.context_embedding_model = context_embedding_model\r\n\r\n        if embedding_model is None:\r\n            embedding_model = OpenAIEmbeddingModel()\r\n        if not isinstance(embedding_model, BaseEmbeddingModel):\r\n            raise ValueError(\r\n                \"embedding_model must be an instance of BaseEmbeddingModel\"\r\n            )\r\n        self.embedding_model = embedding_model\r\n\r\n        if num_layers is not None:\r\n            if not isinstance(num_layers, int) or num_layers < 0:\r\n                raise ValueError(\"num_layers must be an integer and at least 0\")\r\n        self.num_layers = num_layers\r\n\r\n        if start_layer is not None:\r\n            if not isinstance(start_layer, int) or start_layer < 0:\r\n                raise ValueError(\"start_layer must be an integer and at least 0\")\r\n        self.start_layer = start_layer\n```\n\n\n- `num_layers`: Số layer muốn duyệt qua\n- `start_layer`: Layer bắt đầu tìm kiếm\n\nVí dụ cách sử dụng:\n\n```python\nconfig = TreeBuilderConfig(\n    num_layers=3  # Set số layer trong cây là 3\n)\n\nretriever_config = TreeRetrieverConfig(\n    start_layer=2,  # Bắt đầu tìm từ layer 2\n    num_layers=1    # Duyệt qua 1 layer\n)\n```\n\n### 2. Cấu hình Chunk Size\n\nCó 2 cách để cấu hình kích thước chunk:\n\n1. Thông qua `TreeBuilderConfig`:\n\n```38:46:raptor/tree_builder.py\n        if tokenizer is None:\r\n            tokenizer = tiktoken.get_encoding(\"cl100k_base\")\r\n        self.tokenizer = tokenizer\r\n\r\n        if max_tokens is None:\r\n            max_tokens = 100\r\n        if not isinstance(max_tokens, int) or max_tokens < 1:\r\n            raise ValueError(\"max_tokens must be an integer and at least 1\")\r\n        self.max_tokens = max_tokens\r\n```\n\n\n- Sử dụng tham số `max_tokens` (mặc định là 100 tokens)\n\n2. Thông qua `FaissRetrieverConfig`:\n\n```14:56:raptor/FaissRetriever.py\nclass FaissRetrieverConfig:\r\n    def __init__(\r\n        self,\r\n        max_tokens=100,\r\n        max_context_tokens=3500,\r\n        use_top_k=False,\r\n        embedding_model=None,\r\n        question_embedding_model=None,\r\n        top_k=5,\r\n        tokenizer=tiktoken.get_encoding(\"cl100k_base\"),\r\n        embedding_model_string=None,\r\n    ):\r\n        if max_tokens < 1:\r\n            raise ValueError(\"max_tokens must be at least 1\")\r\n\r\n        if top_k < 1:\r\n            raise ValueError(\"top_k must be at least 1\")\r\n\r\n        if max_context_tokens is not None and max_context_tokens < 1:\r\n            raise ValueError(\"max_context_tokens must be at least 1 or None\")\r\n\r\n        if embedding_model is not None and not isinstance(\r\n            embedding_model, BaseEmbeddingModel\r\n        ):\r\n            raise ValueError(\r\n                \"embedding_model must be an instance of BaseEmbeddingModel or None\"\r\n            )\r\n\r\n        if question_embedding_model is not None and not isinstance(\r\n            question_embedding_model, BaseEmbeddingModel\r\n        ):\r\n            raise ValueError(\r\n                \"question_embedding_model must be an instance of BaseEmbeddingModel or None\"\r\n            )\r\n\r\n        self.top_k = top_k\r\n        self.max_tokens = max_tokens\r\n        self.max_context_tokens = max_context_tokens\r\n        self.use_top_k = use_top_k\r\n        self.embedding_model = embedding_model or OpenAIEmbeddingModel()\r\n        self.question_embedding_model = question_embedding_model or self.embedding_model\r\n        self.tokenizer = tokenizer\r\n        self.embedding_model_string = embedding_model_string or \"OpenAI\"\n```\n\n\n- `max_tokens`: Kích thước tối đa của mỗi chunk\n- `max_context_tokens`: Tổng số tokens tối đa cho context\n\nVí dụ:\n\n```python\ntree_config = TreeBuilderConfig(\n    max_tokens=200  # Mỗi chunk có tối đa 200 tokens\n)\n\nfaiss_config = FaissRetrieverConfig(\n    max_tokens=150,           # Mỗi chunk có tối đa 150 tokens  \n    max_context_tokens=3000   # Tổng context tối đa 3000 tokens\n)\n```\n\nLưu ý:\n- Chunk size nhỏ hơn sẽ cho phép tìm kiếm chính xác hơn nhưng tốn nhiều tài nguyên hơn\n- Số layer nhiều sẽ tạo ra cây sâu hơn, phù hợp với tài liệu dài\n- Nên cân nhắc giữa performance và độ chính xác khi cấu hình các tham số này",
+      "match_count": 55,
+      "file": "raptor/tree_retriever.py"
+    },
     "file_statistics": [
       {
         "file": ".DS_Store",
@@ -32,26 +398,20 @@
       {
         "file": "README.md",
         "total_lines": 205,
-        "ai_generated_lines": 0,
-        "ai_generated_percentage": 0
+        "ai_generated_lines": 3,
+        "ai_generated_percentage": 1.4634146341463417
       },
       {
         "file": "code_huggingface.py",
         "total_lines": 56,
-        "ai_generated_lines": 0,
-        "ai_generated_percentage": 0
-      },
-      {
-        "file": "code_testReadme_4omini.py",
-        "total_lines": 56,
-        "ai_generated_lines": 0,
-        "ai_generated_percentage": 0
+        "ai_generated_lines": 4,
+        "ai_generated_percentage": 7.142857142857142
       },
       {
         "file": "code_testReadme_4omini_v2.py",
         "total_lines": 107,
-        "ai_generated_lines": 0,
-        "ai_generated_percentage": 0
+        "ai_generated_lines": 4,
+        "ai_generated_percentage": 3.7383177570093453
       },
       {
         "file": "demo.ipynb",
@@ -92,8 +452,8 @@
       {
         "file": "raptor/FaissRetriever.py",
         "total_lines": 202,
-        "ai_generated_lines": 0,
-        "ai_generated_percentage": 0
+        "ai_generated_lines": 39,
+        "ai_generated_percentage": 19.306930693069308
       },
       {
         "file": "raptor/QAModels.py",
@@ -104,8 +464,8 @@
       {
         "file": "raptor/RetrievalAugmentation.py",
         "total_lines": 307,
-        "ai_generated_lines": 0,
-        "ai_generated_percentage": 0
+        "ai_generated_lines": 8,
+        "ai_generated_percentage": 2.6058631921824107
       },
       {
         "file": "raptor/Retrievers.py",
@@ -128,8 +488,8 @@
       {
         "file": "raptor/cluster_tree_builder.py",
         "total_lines": 152,
-        "ai_generated_lines": 0,
-        "ai_generated_percentage": 0
+        "ai_generated_lines": 9,
+        "ai_generated_percentage": 5.921052631578947
       },
       {
         "file": "raptor/cluster_utils.py",
@@ -140,14 +500,14 @@
       {
         "file": "raptor/tree_builder.py",
         "total_lines": 370,
-        "ai_generated_lines": 0,
-        "ai_generated_percentage": 0
+        "ai_generated_lines": 39,
+        "ai_generated_percentage": 10.54054054054054
       },
       {
         "file": "raptor/tree_retriever.py",
         "total_lines": 328,
-        "ai_generated_lines": 0,
-        "ai_generated_percentage": 0
+        "ai_generated_lines": 61,
+        "ai_generated_percentage": 18.597560975609756
       },
       {
         "file": "raptor/tree_structures.py",
