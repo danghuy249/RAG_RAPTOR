@@ -36,3 +36,4 @@ assertion.log
 
 .venv
 .env
+.gait/custom-merge-driver.sh

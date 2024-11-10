@@ -1,14 +1,19 @@
 # Import thư viện os để làm việc với hệ thống
 import os
-# Import class RetrievalAugmentation và UnifiedQAModel từ module raptor
+# Import thư viện dotenv để đọc biến môi trường từ file .env
+from dotenv import load_dotenv
+# Import class RetrievalAugmentation từ module raptor
 from raptor import RetrievalAugmentation
-from raptor.QAModels import UnifiedQAModel
+
+# Tải các biến môi trường từ file .env
+load_dotenv()
+
+# Lấy API key từ biến môi trường và gán vào biến môi trường OPENAI_API_KEY
+os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
 # Bước 1: Thiết lập môi trường và cấu hình RAPTOR
-# Khởi tạo đối tượng UnifiedQAModel
-qa_model = UnifiedQAModel(model_name="allenai/unifiedqa-v2-t5-3b-1363200")
-# Khởi tạo đối tượng RetrievalAugmentation với UnifiedQAModel
-RA = RetrievalAugmentation(qa_model=qa_model)
+# Khởi tạo đối tượng RetrievalAugmentation với cấu hình mặc định
+RA = RetrievalAugmentation()
 
 # Bước 2: Thêm tài liệu vào cây truy vấn để index
 # Đọc nội dung từ file sample.txt
